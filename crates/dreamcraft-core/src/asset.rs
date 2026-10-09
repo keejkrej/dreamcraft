@@ -90,6 +90,22 @@ impl AssetCatalog {
         id
     }
 
+    pub fn register_bytes(
+        &mut self,
+        name: impl Into<String>,
+        kind: AssetKind,
+        format: impl Into<String>,
+        bytes: Vec<u8>,
+    ) -> AssetEntry {
+        let fmt = format.into();
+        let mut entry = AssetEntry::new(name, kind, format!("data:{};base64,...", fmt));
+        entry.size_bytes = bytes.len() as u64;
+        entry.metadata.format = fmt;
+        let copy = entry.clone();
+        self.register(entry);
+        copy
+    }
+
     pub fn get(&self, id: &Id) -> Option<&AssetEntry> {
         self.assets.get(id)
     }
