@@ -14,30 +14,69 @@ pub enum HeadingLevel {
     Quote,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
 pub enum TextAlign {
+    #[default]
     Left,
     Center,
     Right,
     Justify,
 }
 
-impl Default for TextAlign {
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+pub enum UnderlineStyle {
+    #[default]
+    None,
+    Single,
+    Double,
+    Dotted,
+    Dashed,
+    Wavy,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+pub enum BaselineOffset {
+    #[default]
+    Normal,
+    Superscript,
+    Subscript,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct CharProps {
+    pub font_family: String,
+    pub font_size: f32, // in points
+    pub bold: bool,
+    pub italic: bool,
+    pub underline: UnderlineStyle,
+    pub strike: bool,
+    pub baseline: BaselineOffset,
+    pub color: Color,
+    pub highlight: Option<Color>,
+    pub letter_spacing: f32,
+}
+
+impl Default for CharProps {
     fn default() -> Self {
-        Self::Left
+        Self {
+            font_family: "Calibri".into(),
+            font_size: 11.0,
+            bold: false,
+            italic: false,
+            underline: UnderlineStyle::None,
+            strike: false,
+            baseline: BaselineOffset::Normal,
+            color: Color::BLACK,
+            highlight: None,
+            letter_spacing: 0.0,
+        }
     }
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct TextRun {
     pub text: String,
-    pub bold: bool,
-    pub italic: bool,
-    pub underline: bool,
-    pub strike: bool,
-    pub font_size: f32,
-    pub color: Option<Color>,
-    pub highlight: Option<Color>,
+    pub props: CharProps,
     pub link: Option<String>,
 }
 
@@ -45,30 +84,68 @@ impl TextRun {
     pub fn new(text: impl Into<String>) -> Self {
         Self {
             text: text.into(),
-            bold: false,
-            italic: false,
-            underline: false,
-            strike: false,
-            font_size: 11.0,
-            color: None,
-            highlight: None,
+            props: CharProps::default(),
             link: None,
         }
     }
 
     pub fn bold(mut self) -> Self {
-        self.bold = true;
+        self.props.bold = true;
         self
     }
 
     pub fn italic(mut self) -> Self {
-        self.italic = true;
+        self.props.italic = true;
+        self
+    }
+
+    pub fn with_size(mut self, size: f32) -> Self {
+        self.props.font_size = size;
         self
     }
 
     pub fn with_color(mut self, color: Color) -> Self {
-        self.color = Some(color);
+        self.props.color = color;
         self
+    }
+
+    pub fn with_underline(mut self, style: UnderlineStyle) -> Self {
+        self.props.underline = style;
+        self
+    }
+
+    pub fn with_link(mut self, url: impl Into<String>) -> Self {
+        self.link = Some(url.into());
+        self
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ParaProps {
+    pub align: TextAlign,
+    pub line_spacing: f32,      // 1.0, 1.15, 1.5, 2.0
+    pub space_before: f32,      // in points
+    pub space_after: f32,       // in points
+    pub indent_left: f32,       // in points
+    pub indent_right: f32,      // in points
+    pub indent_first_line: f32, // in points
+    pub keep_with_next: bool,
+    pub page_break_before: bool,
+}
+
+impl Default for ParaProps {
+    fn default() -> Self {
+        Self {
+            align: TextAlign::Left,
+            line_spacing: 1.15,
+            space_before: 0.0,
+            space_after: 6.0,
+            indent_left: 0.0,
+            indent_right: 0.0,
+            indent_first_line: 0.0,
+            keep_with_next: false,
+            page_break_before: false,
+        }
     }
 }
 
@@ -76,6 +153,8 @@ impl TextRun {
 pub struct TableCell {
     pub runs: Vec<TextRun>,
     pub background: Option<Color>,
+    pub col_span: usize,
+    pub row_span: usize,
 }
 
 impl TableCell {
@@ -83,6 +162,8 @@ impl TableCell {
         Self {
             runs: vec![TextRun::new(text)],
             background: None,
+            col_span: 1,
+            row_span: 1,
         }
     }
 
@@ -96,6 +177,8 @@ pub struct TableBlock {
     pub id: Id,
     pub rows: Vec<Vec<TableCell>>,
     pub has_header: bool,
+    pub col_widths: Vec<f32>,
+    pub borders: bool,
 }
 
 impl TableBlock {
@@ -112,6 +195,8 @@ impl TableBlock {
             id: Id::new(),
             rows: row_vec,
             has_header: true,
+            col_widths: vec![100.0; cols],
+            borders: true,
         }
     }
 }
@@ -120,16 +205,34 @@ impl TableBlock {
 pub struct ParagraphBlock {
     pub id: Id,
     pub heading: HeadingLevel,
-    pub align: TextAlign,
+    pub props: ParaProps,
     pub runs: Vec<TextRun>,
 }
 
 impl ParagraphBlock {
     pub fn new(heading: HeadingLevel, text: impl Into<String>) -> Self {
+        let mut props = ParaProps::default();
+        match heading {
+            HeadingLevel::Title => {
+                props.space_after = 12.0;
+                props.space_before = 18.0;
+            }
+            HeadingLevel::Heading1 => {
+                props.space_after = 8.0;
+                props.space_before = 14.0;
+                props.keep_with_next = true;
+            }
+            HeadingLevel::Heading2 => {
+                props.space_after = 6.0;
+                props.space_before = 10.0;
+                props.keep_with_next = true;
+            }
+            _ => {}
+        }
         Self {
             id: Id::new(),
             heading,
-            align: TextAlign::Left,
+            props,
             runs: vec![TextRun::new(text)],
         }
     }
@@ -140,9 +243,39 @@ impl ParagraphBlock {
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct SectionProps {
+    pub page_width: f32,   // 612.0 for US Letter
+    pub page_height: f32,  // 792.0 for US Letter
+    pub margin_top: f32,    // 72.0 (1 inch)
+    pub margin_bottom: f32, // 72.0
+    pub margin_left: f32,   // 72.0
+    pub margin_right: f32,  // 72.0
+    pub columns: u32,
+    pub header_text: Option<String>,
+    pub footer_text: Option<String>,
+}
+
+impl Default for SectionProps {
+    fn default() -> Self {
+        Self {
+            page_width: 612.0,
+            page_height: 792.0,
+            margin_top: 72.0,
+            margin_bottom: 72.0,
+            margin_left: 72.0,
+            margin_right: 72.0,
+            columns: 1,
+            header_text: None,
+            footer_text: Some("Page {PAGE}".into()),
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum DocumentBlock {
     Paragraph(ParagraphBlock),
     Table(TableBlock),
+    PageBreak,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -150,6 +283,7 @@ pub struct WordDocument {
     pub id: Id,
     pub title: String,
     pub author: String,
+    pub section: SectionProps,
     pub blocks: Vec<DocumentBlock>,
 }
 
@@ -160,6 +294,7 @@ impl WordDocument {
             id: Id::new(),
             title: t.clone(),
             author: "AI Agent".into(),
+            section: SectionProps::default(),
             blocks: vec![DocumentBlock::Paragraph(ParagraphBlock::new(
                 HeadingLevel::Title,
                 t,
@@ -182,12 +317,17 @@ impl WordDocument {
         self.blocks.push(DocumentBlock::Paragraph(ParagraphBlock {
             id: Id::new(),
             heading: HeadingLevel::Body,
-            align: TextAlign::Left,
+            props: ParaProps::default(),
             runs,
         }));
     }
 
+    pub fn add_page_break(&mut self) {
+        self.blocks.push(DocumentBlock::PageBreak);
+    }
+
     pub fn insert_table(&mut self, data: Vec<Vec<String>>, has_header: bool) {
+        let cols = data.first().map(|r| r.len()).unwrap_or(0);
         let rows = data
             .into_iter()
             .map(|row| row.into_iter().map(TableCell::new).collect())
@@ -196,6 +336,8 @@ impl WordDocument {
             id: Id::new(),
             rows,
             has_header,
+            col_widths: vec![100.0; cols],
+            borders: true,
         }));
     }
 
@@ -223,9 +365,14 @@ impl WordDocument {
                         }
                     }
                 }
+                DocumentBlock::PageBreak => {}
             }
         }
         count
+    }
+
+    pub fn word_count(&self) -> usize {
+        self.to_plain_text().split_whitespace().count()
     }
 
     pub fn to_plain_text(&self) -> String {
@@ -242,6 +389,9 @@ impl WordDocument {
                         out.push_str(&row_str.join("\t"));
                         out.push('\n');
                     }
+                }
+                DocumentBlock::PageBreak => {
+                    out.push_str("\n--- [Page Break] ---\n\n");
                 }
             }
             out.push('\n');
@@ -267,12 +417,16 @@ impl WordDocument {
                     };
                     out.push_str(prefix);
                     for run in &p.runs {
-                        if run.bold && run.italic {
+                        if run.props.bold && run.props.italic {
                             out.push_str(&format!("***{}***", run.text));
-                        } else if run.bold {
+                        } else if run.props.bold {
                             out.push_str(&format!("**{}**", run.text));
-                        } else if run.italic {
+                        } else if run.props.italic {
                             out.push_str(&format!("*{}*", run.text));
+                        } else if run.props.strike {
+                            out.push_str(&format!("~~{}~~", run.text));
+                        } else if let Some(link) = &run.link {
+                            out.push_str(&format!("[{}]({})", run.text, link));
                         } else {
                             out.push_str(&run.text);
                         }
@@ -301,8 +455,46 @@ impl WordDocument {
                     }
                     out.push('\n');
                 }
+                DocumentBlock::PageBreak => {
+                    out.push_str("---\n\n");
+                }
             }
         }
         out
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_word_doc_building_and_search_replace() {
+        let mut doc = WordDocument::new("Architecture Specification");
+        doc.add_heading(HeadingLevel::Heading1, "System Overview");
+        doc.add_paragraph("The system uses Rust primitives for speed.");
+
+        assert_eq!(doc.blocks.len(), 3); // Title + Heading + Paragraph
+        let replaced = doc.search_and_replace("Rust", "DreamCraft");
+        assert_eq!(replaced, 1);
+
+        let md = doc.to_markdown();
+        assert!(md.contains("# System Overview"));
+        assert!(md.contains("DreamCraft primitives"));
+    }
+
+    #[test]
+    fn test_word_table_and_markdown() {
+        let mut doc = WordDocument::new("Report");
+        let data = vec![
+            vec!["Metric".into(), "Value".into()],
+            vec!["Latency".into(), "12ms".into()],
+            vec!["Throughput".into(), "100k req/s".into()],
+        ];
+        doc.insert_table(data, true);
+
+        let md = doc.to_markdown();
+        assert!(md.contains("| Metric | Value |"));
+        assert!(md.contains("| Latency | 12ms |"));
     }
 }

@@ -95,12 +95,12 @@ async fn main() -> anyhow::Result<()> {
             let vocal_id = sound.tracks[0].id;
             sound.set_fader(vocal_id, -3.5)?;
             sound.set_pan(vocal_id, 0.0)?;
-            sound.add_effect(vocal_id, dreamcraft_primitives::tool::AudioEffect::Compressor {
-                threshold_db: -18.0,
-                ratio: 4.0,
-                attack_ms: 10.0,
-                release_ms: 100.0,
-            })?;
+            sound.add_effect(
+                vocal_id,
+                dreamcraft_primitives::tool::AudioEffect::Compressor(
+                    dreamcraft_primitives::tool::Compressor::default(),
+                ),
+            )?;
             println!("✓ Audio Session configured: {} tracks with compressor & fader control.", sound.tracks.len());
 
             // 6. LightCraft / Photo RAW Develop Primitives (Lightroom clone)

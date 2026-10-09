@@ -2,7 +2,8 @@ use crate::state::DreamSession;
 use dreamcraft_core::{ChangeEvent, Color, Id, Rect, Tick};
 use dreamcraft_primitives::ai::CreativePipeline;
 use dreamcraft_primitives::tool::{
-    AudioEffect, CellCoord, HeadingLevel, SlideLayout, TrackKind, WordDocument, Workbook,
+    AudioEffect, CellCoord, Compressor, DeckThemeKind, Delay, HeadingLevel, ParametricEq, Reverb, SlideLayout,
+    TrackKind, TransitionKind, WordDocument, Workbook,
 };
 use serde_json::{Value, json};
 
@@ -613,6 +614,157 @@ pub fn tool_definitions() -> Value {
                 },
                 "required": ["title", "scenes"]
             })
+        ),
+        // --- ADVANCED SUITE POWER PRIMITIVES ---
+        tool_spec(
+            "grid_sort_range",
+            "Sort Spreadsheet Range",
+            "Sort rows in a range by a column index (ascending or descending) with header detection.",
+            json!({
+                "type": "object",
+                "properties": {
+                    "range": { "type": "string" },
+                    "sort_col_offset": { "type": "integer" },
+                    "ascending": { "type": "boolean" },
+                    "has_header": { "type": "boolean" }
+                },
+                "required": ["range", "sort_col_offset"]
+            })
+        ),
+        tool_spec(
+            "film_slip_clip",
+            "Premiere Slip Trim Clip",
+            "Adjust source media in/out point without shifting clip placement or duration on timeline.",
+            json!({
+                "type": "object",
+                "properties": {
+                    "clip_id": { "type": "string" },
+                    "delta_seconds": { "type": "number" }
+                },
+                "required": ["clip_id", "delta_seconds"]
+            })
+        ),
+        tool_spec(
+            "film_roll_edit",
+            "Premiere Roll Cut Trim",
+            "Adjust cut boundary between two adjacent clips without changing overall sequence length.",
+            json!({
+                "type": "object",
+                "properties": {
+                    "left_clip_id": { "type": "string" },
+                    "right_clip_id": { "type": "string" },
+                    "delta_seconds": { "type": "number" }
+                },
+                "required": ["left_clip_id", "right_clip_id", "delta_seconds"]
+            })
+        ),
+        tool_spec(
+            "film_set_speed",
+            "Premiere Rate Stretch / Speed",
+            "Change clip playback speed multiplier (0.5x, 2.0x, -1.0x reverse) with optional ripple.",
+            json!({
+                "type": "object",
+                "properties": {
+                    "clip_id": { "type": "string" },
+                    "speed": { "type": "number" },
+                    "ripple": { "type": "boolean" }
+                },
+                "required": ["clip_id", "speed"]
+            })
+        ),
+        tool_spec(
+            "film_add_transition",
+            "Add Video Transition",
+            "Add a transition (CrossDissolve, DipToBlack, WipeLeft, etc.) on an edit track.",
+            json!({
+                "type": "object",
+                "properties": {
+                    "track_id": { "type": "string" },
+                    "kind": { "type": "string", "enum": ["CrossDissolve", "DipToBlack", "DipToWhite", "WipeLeft", "WipeRight"] },
+                    "start_seconds": { "type": "number" },
+                    "duration_seconds": { "type": "number" }
+                },
+                "required": ["track_id", "kind", "start_seconds", "duration_seconds"]
+            })
+        ),
+        tool_spec(
+            "deck_set_theme",
+            "Set Deck Theme",
+            "Apply professional presentation color & font palette (Harbor, Ember, Meadow, Nocturne, Paper, Slate).",
+            json!({
+                "type": "object",
+                "properties": {
+                    "theme": { "type": "string", "enum": ["Harbor", "Ember", "Meadow", "Nocturne", "Paper", "Slate"] }
+                },
+                "required": ["theme"]
+            })
+        ),
+        tool_spec(
+            "deck_add_metric_slide",
+            "Add Key Metric Slide",
+            "Add an executive KPI / Key Metric highlight slide with large typography and labels.",
+            json!({
+                "type": "object",
+                "properties": {
+                    "title": { "type": "string" },
+                    "metric_value": { "type": "string" },
+                    "metric_label": { "type": "string" },
+                    "description": { "type": "string" }
+                },
+                "required": ["title", "metric_value", "metric_label", "description"]
+            })
+        ),
+        tool_spec(
+            "light_apply_preset",
+            "Apply Lightroom RAW Preset",
+            "Apply professional color grading & tone curve preset to the active photo.",
+            json!({
+                "type": "object",
+                "properties": {
+                    "preset": { "type": "string", "enum": ["cinematic_warm", "moody_cold", "vibrant_landscape", "clean_portrait"] }
+                },
+                "required": ["preset"]
+            })
+        ),
+        tool_spec(
+            "sound_add_automation",
+            "Add DAW Track Automation",
+            "Add volume or pan automation breakpoint at a specific time in the DAW session.",
+            json!({
+                "type": "object",
+                "properties": {
+                    "track_index": { "type": "integer" },
+                    "parameter": { "type": "string" },
+                    "seconds": { "type": "number" },
+                    "value": { "type": "number" }
+                },
+                "required": ["track_index", "parameter", "seconds", "value"]
+            })
+        ),
+        tool_spec(
+            "pdf_rotate_page",
+            "Rotate PDF Page",
+            "Rotate a PDF page clockwise by 90, 180, or 270 degrees.",
+            json!({
+                "type": "object",
+                "properties": {
+                    "page_index": { "type": "integer" },
+                    "degrees": { "type": "integer" }
+                },
+                "required": ["page_index", "degrees"]
+            })
+        ),
+        tool_spec(
+            "pdf_set_watermark",
+            "Set PDF Watermark",
+            "Apply a semi-transparent diagonal security watermark across all PDF pages.",
+            json!({
+                "type": "object",
+                "properties": {
+                    "text": { "type": "string" }
+                },
+                "required": ["text"]
+            })
         )
     ])
 }
@@ -1045,10 +1197,10 @@ pub async fn call_tool(session: &DreamSession, name: &str, args: &Value) -> Tool
             let t_idx = args["track_index"].as_u64().unwrap_or(0) as usize;
             let kind = args["effect_kind"].as_str().unwrap_or("eq");
             let eff = match kind {
-                "compressor" => AudioEffect::Compressor { threshold_db: -18.0, ratio: 4.0, attack_ms: 10.0, release_ms: 100.0 },
-                "reverb" => AudioEffect::Reverb { room_size: 0.6, damping: 0.5, wet_dry: 0.25 },
-                "delay" => AudioEffect::Delay { time_ms: 350.0, feedback: 0.4, mix: 0.2 },
-                _ => AudioEffect::Equalizer { low_db: 1.5, mid_db: 0.0, high_db: 2.0 },
+                "compressor" => AudioEffect::Compressor(Compressor::default()),
+                "reverb" => AudioEffect::Reverb(Reverb::default()),
+                "delay" => AudioEffect::Delay(Delay::default()),
+                _ => AudioEffect::Equalizer(ParametricEq::default()),
             };
 
             let mut lock = session.sound_project.lock().unwrap();
@@ -1306,6 +1458,199 @@ pub async fn call_tool(session: &DreamSession, name: &str, args: &Value) -> Tool
                     ToolResult::text(format!("Generated movie sequence '{}' with {} scenes!\n\nEDL Preview:\n{}", title, scenes_arr.len(), edl))
                 }
                 Err(e) => ToolResult::error(e.to_string()),
+            }
+        }
+
+        "grid_sort_range" => {
+            let range = args["range"].as_str().unwrap_or("A1:D10");
+            let offset = args["sort_col_offset"].as_u64().unwrap_or(0) as u32;
+            let asc = args["ascending"].as_bool().unwrap_or(true);
+            let has_hdr = args["has_header"].as_bool().unwrap_or(false);
+
+            let mut lock = session.workbook.lock().unwrap();
+            if let Some(wb) = lock.as_mut() {
+                let sheet = wb.active_sheet_mut();
+                match sheet.sort_range(range, offset, asc, has_hdr) {
+                    Ok(_) => ToolResult::text(format!("Sorted range {} by column offset {} (ascending: {})", range, offset, asc)),
+                    Err(e) => ToolResult::error(e.to_string()),
+                }
+            } else {
+                ToolResult::error("No active Workbook.")
+            }
+        }
+
+        "film_slip_clip" => {
+            let cid_str = args["clip_id"].as_str().unwrap_or("");
+            let delta = args["delta_seconds"].as_f64().unwrap_or(0.0);
+            let tick = Tick::from_seconds(delta);
+
+            let mut lock = session.film_seq.lock().unwrap();
+            if let Some(seq) = lock.as_mut() {
+                let id = Id::parse(cid_str).unwrap_or_default();
+                match seq.slip(id, tick) {
+                    Ok(_) => ToolResult::text(format!("Slipped clip {} by {:.2}s", cid_str, delta)),
+                    Err(e) => ToolResult::error(e.to_string()),
+                }
+            } else {
+                ToolResult::error("No active Film Sequence.")
+            }
+        }
+
+        "film_roll_edit" => {
+            let left_id_str = args["left_clip_id"].as_str().unwrap_or("");
+            let right_id_str = args["right_clip_id"].as_str().unwrap_or("");
+            let delta = args["delta_seconds"].as_f64().unwrap_or(0.0);
+            let tick = Tick::from_seconds(delta);
+
+            let mut lock = session.film_seq.lock().unwrap();
+            if let Some(seq) = lock.as_mut() {
+                let left_id = Id::parse(left_id_str).unwrap_or_default();
+                let right_id = Id::parse(right_id_str).unwrap_or_default();
+                match seq.roll(left_id, right_id, tick) {
+                    Ok(_) => ToolResult::text(format!("Rolled edit boundary between {} and {} by {:.2}s", left_id_str, right_id_str, delta)),
+                    Err(e) => ToolResult::error(e.to_string()),
+                }
+            } else {
+                ToolResult::error("No active Film Sequence.")
+            }
+        }
+
+        "film_set_speed" => {
+            let cid_str = args["clip_id"].as_str().unwrap_or("");
+            let speed = args["speed"].as_f64().unwrap_or(1.0);
+            let ripple = args["ripple"].as_bool().unwrap_or(true);
+
+            let mut lock = session.film_seq.lock().unwrap();
+            if let Some(seq) = lock.as_mut() {
+                let id = Id::parse(cid_str).unwrap_or_default();
+                match seq.set_speed(id, speed, ripple) {
+                    Ok(_) => ToolResult::text(format!("Set clip {} speed to {:.2}x (ripple: {})", cid_str, speed, ripple)),
+                    Err(e) => ToolResult::error(e.to_string()),
+                }
+            } else {
+                ToolResult::error("No active Film Sequence.")
+            }
+        }
+
+        "film_add_transition" => {
+            let tid_str = args["track_id"].as_str().unwrap_or("");
+            let kind_str = args["kind"].as_str().unwrap_or("CrossDissolve");
+            let start = Tick::from_seconds(args["start_seconds"].as_f64().unwrap_or(0.0));
+            let dur = Tick::from_seconds(args["duration_seconds"].as_f64().unwrap_or(1.0));
+
+            let kind = match kind_str {
+                "DipToBlack" => TransitionKind::DipToBlack,
+                "DipToWhite" => TransitionKind::DipToWhite,
+                "WipeLeft" => TransitionKind::WipeLeft,
+                "WipeRight" => TransitionKind::WipeRight,
+                _ => TransitionKind::CrossDissolve,
+            };
+
+            let mut lock = session.film_seq.lock().unwrap();
+            if let Some(seq) = lock.as_mut() {
+                let tid = Id::parse(tid_str).unwrap_or_default();
+                match seq.add_transition(tid, kind, start, dur, None, None) {
+                    Ok(id) => ToolResult::text(format!("Added {:?} transition (ID: {}) to track {}", kind, id, tid_str)),
+                    Err(e) => ToolResult::error(e.to_string()),
+                }
+            } else {
+                ToolResult::error("No active Film Sequence.")
+            }
+        }
+
+        "deck_set_theme" => {
+            let theme_str = args["theme"].as_str().unwrap_or("Harbor");
+            let theme_kind = match theme_str {
+                "Ember" => DeckThemeKind::Ember,
+                "Meadow" => DeckThemeKind::Meadow,
+                "Nocturne" => DeckThemeKind::Nocturne,
+                "Paper" => DeckThemeKind::Paper,
+                "Slate" => DeckThemeKind::Slate,
+                _ => DeckThemeKind::Harbor,
+            };
+
+            let mut lock = session.deck.lock().unwrap();
+            if let Some(deck) = lock.as_mut() {
+                deck.set_theme(theme_kind);
+                ToolResult::text(format!("Applied '{}' theme palette to presentation.", theme_str))
+            } else {
+                ToolResult::error("No active Presentation.")
+            }
+        }
+
+        "deck_add_metric_slide" => {
+            let title = args["title"].as_str().unwrap_or("Performance KPI");
+            let metric_val = args["metric_value"].as_str().unwrap_or("$10M+");
+            let metric_label = args["metric_label"].as_str().unwrap_or("ARR");
+            let desc = args["description"].as_str().unwrap_or("Description");
+
+            let mut lock = session.deck.lock().unwrap();
+            if let Some(deck) = lock.as_mut() {
+                let idx = deck.add_metric_slide(title, metric_val, metric_label, desc);
+                ToolResult::text(format!("Added Key Metric slide (Slide #{})", idx + 1))
+            } else {
+                ToolResult::error("No active Presentation.")
+            }
+        }
+
+        "light_apply_preset" => {
+            let preset = args["preset"].as_str().unwrap_or("cinematic_warm");
+            let mut lock = session.light_photo.lock().unwrap();
+            if let Some(photo) = lock.as_mut() {
+                photo.apply_preset(preset);
+                ToolResult::text(format!("Applied develop preset '{}' to {}", preset, photo.path))
+            } else {
+                ToolResult::error("No active LightCraft photo.")
+            }
+        }
+
+        "sound_add_automation" => {
+            let t_idx = args["track_index"].as_u64().unwrap_or(0) as usize;
+            let param = args["parameter"].as_str().unwrap_or("volume");
+            let secs = args["seconds"].as_f64().unwrap_or(0.0);
+            let val = args["value"].as_f64().unwrap_or(0.0);
+            let tick = Tick::from_seconds(secs);
+
+            let mut lock = session.sound_project.lock().unwrap();
+            if let Some(proj) = lock.as_mut() {
+                if let Some(track) = proj.tracks.get(t_idx) {
+                    let tid = track.id;
+                    let tname = track.name.clone();
+                    match proj.add_automation_point(tid, param, tick, val) {
+                        Ok(_) => ToolResult::text(format!("Added {} automation at {:.2}s = {:.2} on track {}", param, secs, val, tname)),
+                        Err(e) => ToolResult::error(e.to_string()),
+                    }
+                } else {
+                    ToolResult::error("Track index out of bounds.")
+                }
+            } else {
+                ToolResult::error("No active Audio Project.")
+            }
+        }
+
+        "pdf_rotate_page" => {
+            let p_idx = args["page_index"].as_u64().unwrap_or(0) as usize;
+            let deg = args["degrees"].as_u64().unwrap_or(90) as u16;
+
+            let mut lock = session.pdf_doc.lock().unwrap();
+            if let Some(doc) = lock.as_mut() {
+                match doc.rotate_page(p_idx, deg) {
+                    Ok(_) => ToolResult::text(format!("Rotated page {} by {} degrees", p_idx + 1, deg)),
+                    Err(e) => ToolResult::error(e.to_string()),
+                }
+            } else {
+                ToolResult::error("No active PDF Document.")
+            }
+        }
+
+        "pdf_set_watermark" => {
+            let text = args["text"].as_str().unwrap_or("CONFIDENTIAL");
+            let mut lock = session.pdf_doc.lock().unwrap();
+            if let Some(doc) = lock.as_mut() {
+                doc.set_watermark(text);
+                ToolResult::text(format!("Applied watermark '{}' across all PDF pages.", text))
+            } else {
+                ToolResult::error("No active PDF Document.")
             }
         }
 
