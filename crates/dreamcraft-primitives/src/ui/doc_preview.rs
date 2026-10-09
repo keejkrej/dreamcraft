@@ -36,13 +36,13 @@ impl DocPreview {
 
                             for run in &p.runs {
                                 let mut text = RichText::new(&run.text).size(size);
-                                if run.bold || bold {
+                                if run.props.bold || bold {
                                     text = text.strong();
                                 }
-                                if run.italic {
+                                if run.props.italic {
                                     text = text.italics();
                                 }
-                                if run.underline {
+                                if !matches!(run.props.underline, crate::tool::word::UnderlineStyle::None) {
                                     text = text.underline();
                                 }
                                 text = text.color(color);
@@ -72,6 +72,13 @@ impl DocPreview {
                                 });
                         });
                         ui.add_space(12.0);
+                    }
+                    DocumentBlock::PageBreak => {
+                        ui.add_space(8.0);
+                        ui.separator();
+                        ui.label(RichText::new("── Page Break ──").size(10.0).color(Color32::from_rgb(120, 130, 150)));
+                        ui.separator();
+                        ui.add_space(8.0);
                     }
                 }
             }

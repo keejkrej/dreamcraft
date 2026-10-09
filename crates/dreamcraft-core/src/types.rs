@@ -12,6 +12,10 @@ impl Id {
     pub fn short_str(&self) -> String {
         self.0.to_string()[..8].to_string()
     }
+
+    pub fn parse(s: &str) -> Option<Self> {
+        Uuid::parse_str(s).ok().map(Self)
+    }
 }
 
 impl Default for Id {

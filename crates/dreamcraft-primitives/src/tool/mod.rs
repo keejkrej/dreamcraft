@@ -12,14 +12,14 @@ pub mod vector;
 pub mod word;
 
 pub use cad::{CadDrawing, CadEntity, CadLayer};
-pub use deck::{Presentation, ShapeKind, Slide, SlideImage, SlideLayout, SlideShape, SlideText};
+pub use deck::{DeckThemeKind, Presentation, ShapeKind, Slide, SlideImage, SlideLayout, SlideShape, SlideText};
 pub use design::{DesignDocument, DesignPage, GraphicFrame, Margins, TextFrame};
 pub use effect::{CompLayer, CompLayerKind, Composition, KeyInterpolation, Keyframe, Transform, VfxEffect};
-pub use film::{Sequence, SequenceSettings, Track, TrackItem, TrackKind};
+pub use film::{Sequence, SequenceSettings, Track, TrackItem, TrackKind, TransitionKind};
 pub use grid::{Cell, CellCoord, CellValue, Sheet, Workbook};
 pub use light::{DevelopSettings, DenoiseSettings, LightPhoto, PresenceSettings, ToneSettings, WhiteBalance};
-pub use pdf::{PdfDocument, PdfPage};
+pub use pdf::{PdfAnnotation, PdfDocument, PdfPage};
 pub use photo::{Adjustments, BlendMode, Layer, PhotoCanvas};
-pub use sound::{AudioClip, AudioEffect, AudioTrack, SoundProject};
+pub use sound::{AudioClip, AudioEffect, AudioTrack, Compressor, Delay, ParametricEq, Reverb, SoundProject};
 pub use vector::{VectorDocument, VectorElement, VectorNode, VectorPath, VectorShapeKind};
 pub use word::{DocumentBlock, HeadingLevel, ParagraphBlock, TableBlock, TableCell, TextAlign, TextRun, WordDocument};

@@ -76,4 +76,8 @@ impl TimeRange {
     pub fn overlaps(&self, other: &Self) -> bool {
         self.start < other.end() && other.start < self.end()
     }
+
+    pub fn is_empty(&self) -> bool {
+        self.duration.0 <= 0
+    }
 }
