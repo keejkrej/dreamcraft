@@ -2,7 +2,7 @@ use crate::state::DreamSession;
 use dreamcraft_core::{ChangeEvent, Color, Id, Rect, Tick};
 use dreamcraft_primitives::ai::CreativePipeline;
 use dreamcraft_primitives::tool::{
-    CellCoord, HeadingLevel, SlideLayout, TrackKind, WordDocument, Workbook,
+    AudioEffect, CellCoord, HeadingLevel, SlideLayout, TrackKind, WordDocument, Workbook,
 };
 use serde_json::{Value, json};
 
@@ -46,7 +46,7 @@ fn tool_spec(name: &str, title: &str, desc: &str, schema: Value) -> Value {
 
 pub fn tool_definitions() -> Value {
     json!([
-        // --- WORD PRIMITIVES ---
+        // --- 1. WORD PRIMITIVES (WordCraft) ---
         tool_spec(
             "word_new_document",
             "New Word Document",
@@ -78,8 +78,8 @@ pub fn tool_definitions() -> Value {
                 "type": "object",
                 "properties": {
                     "text": { "type": "string", "description": "Paragraph text content" },
-                    "bold": { "type": "boolean", "description": "Whether the text is bold" },
-                    "italic": { "type": "boolean", "description": "Whether the text is italic" }
+                    "bold": { "type": "boolean" },
+                    "italic": { "type": "boolean" }
                 },
                 "required": ["text"]
             })
@@ -96,7 +96,7 @@ pub fn tool_definitions() -> Value {
                         "items": { "type": "array", "items": { "type": "string" } },
                         "description": "2D array of table row cells"
                     },
-                    "has_header": { "type": "boolean", "description": "Whether the first row is a header" }
+                    "has_header": { "type": "boolean" }
                 },
                 "required": ["data"]
             })
@@ -108,7 +108,7 @@ pub fn tool_definitions() -> Value {
             json!({
                 "type": "object",
                 "properties": {
-                    "format": { "type": "string", "enum": ["markdown", "text"], "description": "Output format" }
+                    "format": { "type": "string", "enum": ["markdown", "text"] }
                 }
             })
         ),
@@ -119,21 +119,21 @@ pub fn tool_definitions() -> Value {
             json!({
                 "type": "object",
                 "properties": {
-                    "find": { "type": "string", "description": "Text to find" },
-                    "replace_with": { "type": "string", "description": "Replacement text" }
+                    "find": { "type": "string" },
+                    "replace_with": { "type": "string" }
                 },
                 "required": ["find", "replace_with"]
             })
         ),
 
-        // --- GRID / SPREADSHEET PRIMITIVES ---
+        // --- 2. GRID / SPREADSHEET PRIMITIVES (GridCraft) ---
         tool_spec(
             "grid_new_workbook",
             "New Excel Workbook",
             "Create a new blank Excel-style workbook.",
             json!({
                 "type": "object",
-                "properties": { "title": { "type": "string", "description": "Workbook title" } },
+                "properties": { "title": { "type": "string" } },
                 "required": ["title"]
             })
         ),
@@ -156,9 +156,7 @@ pub fn tool_definitions() -> Value {
             "Read a 2D range of cell values, e.g. 'A1:C5' or 'B2'.",
             json!({
                 "type": "object",
-                "properties": {
-                    "range": { "type": "string", "description": "Range expression, e.g. 'A1:D10'" }
-                },
+                "properties": { "range": { "type": "string" } },
                 "required": ["range"]
             })
         ),
@@ -169,11 +167,10 @@ pub fn tool_definitions() -> Value {
             json!({
                 "type": "object",
                 "properties": {
-                    "start": { "type": "string", "description": "Top-left cell coordinate, e.g. 'A1'" },
+                    "start": { "type": "string" },
                     "values": {
                         "type": "array",
-                        "items": { "type": "array", "items": { "type": "string" } },
-                        "description": "2D array of values"
+                        "items": { "type": "array", "items": { "type": "string" } }
                     }
                 },
                 "required": ["start", "values"]
@@ -186,7 +183,7 @@ pub fn tool_definitions() -> Value {
             json!({ "type": "object", "properties": {} })
         ),
 
-        // --- FILM / VIDEO EDITING PRIMITIVES ---
+        // --- 3. FILM / VIDEO EDITING PRIMITIVES (FilmCraft) ---
         tool_spec(
             "film_new_sequence",
             "New Video Sequence",
@@ -194,8 +191,8 @@ pub fn tool_definitions() -> Value {
             json!({
                 "type": "object",
                 "properties": {
-                    "name": { "type": "string", "description": "Sequence name" },
-                    "fps": { "type": "number", "description": "Frame rate (e.g. 24.0, 30.0, 60.0)" }
+                    "name": { "type": "string" },
+                    "fps": { "type": "number" }
                 },
                 "required": ["name"]
             })
@@ -207,12 +204,12 @@ pub fn tool_definitions() -> Value {
             json!({
                 "type": "object",
                 "properties": {
-                    "track_kind": { "type": "string", "enum": ["video", "audio"], "description": "Track kind" },
-                    "track_index": { "type": "integer", "description": "Track index (0 for V1/A1, 1 for V2/A2)" },
-                    "name": { "type": "string", "description": "Clip name" },
-                    "source_path": { "type": "string", "description": "File path or URL of media" },
-                    "start_seconds": { "type": "number", "description": "Timeline start position in seconds" },
-                    "duration_seconds": { "type": "number", "description": "Clip duration in seconds" }
+                    "track_kind": { "type": "string", "enum": ["video", "audio"] },
+                    "track_index": { "type": "integer" },
+                    "name": { "type": "string" },
+                    "source_path": { "type": "string" },
+                    "start_seconds": { "type": "number" },
+                    "duration_seconds": { "type": "number" }
                 },
                 "required": ["track_kind", "name", "source_path", "start_seconds", "duration_seconds"]
             })
@@ -226,7 +223,7 @@ pub fn tool_definitions() -> Value {
                 "properties": {
                     "track_kind": { "type": "string", "enum": ["video", "audio"] },
                     "track_index": { "type": "integer" },
-                    "cut_time_seconds": { "type": "number", "description": "Cut point in seconds" }
+                    "cut_time_seconds": { "type": "number" }
                 },
                 "required": ["track_kind", "cut_time_seconds"]
             })
@@ -237,9 +234,7 @@ pub fn tool_definitions() -> Value {
             "Delete a clip by ID and ripple close the gap by shifting following clips earlier.",
             json!({
                 "type": "object",
-                "properties": {
-                    "clip_id": { "type": "string", "description": "Clip UUID" }
-                },
+                "properties": { "clip_id": { "type": "string" } },
                 "required": ["clip_id"]
             })
         ),
@@ -250,9 +245,9 @@ pub fn tool_definitions() -> Value {
             json!({
                 "type": "object",
                 "properties": {
-                    "clip_id": { "type": "string", "description": "Clip UUID" },
-                    "delta_seconds": { "type": "number", "description": "Seconds to extend (+) or shorten (-)" },
-                    "trim_tail": { "type": "boolean", "description": "True for tail trim, false for head trim" }
+                    "clip_id": { "type": "string" },
+                    "delta_seconds": { "type": "number" },
+                    "trim_tail": { "type": "boolean" }
                 },
                 "required": ["clip_id", "delta_seconds", "trim_tail"]
             })
@@ -264,14 +259,14 @@ pub fn tool_definitions() -> Value {
             json!({ "type": "object", "properties": {} })
         ),
 
-        // --- DECK / SLIDE PRIMITIVES ---
+        // --- 4. DECK / PRESENTATION PRIMITIVES (DeckCraft) ---
         tool_spec(
             "deck_new_presentation",
             "New Slide Presentation",
             "Create a new PowerPoint-style slide presentation.",
             json!({
                 "type": "object",
-                "properties": { "title": { "type": "string", "description": "Presentation title" } },
+                "properties": { "title": { "type": "string" } },
                 "required": ["title"]
             })
         ),
@@ -283,8 +278,8 @@ pub fn tool_definitions() -> Value {
                 "type": "object",
                 "properties": {
                     "layout": { "type": "string", "enum": ["TitleSlide", "TitleAndContent", "TwoColumns", "Blank"] },
-                    "title": { "type": "string", "description": "Slide title" },
-                    "subtitle": { "type": "string", "description": "Optional subtitle" }
+                    "title": { "type": "string" },
+                    "subtitle": { "type": "string" }
                 },
                 "required": ["title"]
             })
@@ -296,9 +291,9 @@ pub fn tool_definitions() -> Value {
             json!({
                 "type": "object",
                 "properties": {
-                    "slide_index": { "type": "integer", "description": "Slide index (0-based)" },
-                    "text": { "type": "string", "description": "Bullet text" },
-                    "y_offset": { "type": "number", "description": "Vertical offset in points" }
+                    "slide_index": { "type": "integer" },
+                    "text": { "type": "string" },
+                    "y_offset": { "type": "number" }
                 },
                 "required": ["text"]
             })
@@ -311,7 +306,7 @@ pub fn tool_definitions() -> Value {
                 "type": "object",
                 "properties": {
                     "slide_index": { "type": "integer" },
-                    "source_path": { "type": "string", "description": "Image file path or URL" },
+                    "source_path": { "type": "string" },
                     "x": { "type": "number" },
                     "y": { "type": "number" },
                     "width": { "type": "number" },
@@ -321,7 +316,139 @@ pub fn tool_definitions() -> Value {
             })
         ),
 
-        // --- CREATIVE PRIMITIVES (Photo, Vector, CAD, PDF) ---
+        // --- 5. SOUND / AUDIO MIXER PRIMITIVES (SoundCraft / Pro Tools) ---
+        tool_spec(
+            "sound_new_project",
+            "New Audio Project (DAW)",
+            "Create a new Pro Tools-style audio mixing project with tracks.",
+            json!({
+                "type": "object",
+                "properties": { "name": { "type": "string" } },
+                "required": ["name"]
+            })
+        ),
+        tool_spec(
+            "sound_add_track",
+            "Add Audio Track",
+            "Add a named audio track to the DAW session (e.g. Vocal, Drums, Synth).",
+            json!({
+                "type": "object",
+                "properties": { "name": { "type": "string" } },
+                "required": ["name"]
+            })
+        ),
+        tool_spec(
+            "sound_set_fader",
+            "Set Track Volume Fader",
+            "Adjust a track's volume fader in dB (-inf to +12 dB).",
+            json!({
+                "type": "object",
+                "properties": {
+                    "track_index": { "type": "integer" },
+                    "volume_db": { "type": "number" }
+                },
+                "required": ["track_index", "volume_db"]
+            })
+        ),
+        tool_spec(
+            "sound_add_effect",
+            "Add DSP Effect to Audio Track",
+            "Add an EQ, Compressor, Reverb, or Delay effect to an audio track.",
+            json!({
+                "type": "object",
+                "properties": {
+                    "track_index": { "type": "integer" },
+                    "effect_kind": { "type": "string", "enum": ["eq", "compressor", "reverb", "delay"] }
+                },
+                "required": ["track_index", "effect_kind"]
+            })
+        ),
+
+        // --- 6. LIGHT / PHOTO RAW DEVELOP PRIMITIVES (LightCraft / Lightroom) ---
+        tool_spec(
+            "light_develop_photo",
+            "Develop Photo (Lightroom)",
+            "Non-destructively develop a RAW photo: exposure, white balance (temp, tint), highlights/shadows.",
+            json!({
+                "type": "object",
+                "properties": {
+                    "exposure_ev": { "type": "number", "description": "Exposure EV adjustment (-5.0 .. +5.0)" },
+                    "temperature": { "type": "number", "description": "White balance temperature (-100 .. +100)" },
+                    "tint": { "type": "number", "description": "White balance tint (-100 .. +100)" },
+                    "highlights": { "type": "number", "description": "Highlights recovery (-100 .. +100)" },
+                    "shadows": { "type": "number", "description": "Shadows lift (-100 .. +100)" }
+                }
+            })
+        ),
+        tool_spec(
+            "light_inspect_photo",
+            "Inspect Photo Develop State",
+            "Inspect active photo metadata (ISO, shutter, aperture) and develop settings.",
+            json!({ "type": "object", "properties": {} })
+        ),
+
+        // --- 7. EFFECT / MOTION GRAPHICS & VFX PRIMITIVES (EffectCraft / After Effects) ---
+        tool_spec(
+            "effect_new_comp",
+            "New Motion Graphics Composition",
+            "Create an After Effects-style composition with fps and duration.",
+            json!({
+                "type": "object",
+                "properties": {
+                    "name": { "type": "string" },
+                    "width": { "type": "integer" },
+                    "height": { "type": "integer" },
+                    "fps": { "type": "number" },
+                    "duration_frames": { "type": "integer" }
+                },
+                "required": ["name", "width", "height", "fps", "duration_frames"]
+            })
+        ),
+        tool_spec(
+            "effect_add_layer",
+            "Add Layer to Composition",
+            "Add a Solid or Text layer to the active composition.",
+            json!({
+                "type": "object",
+                "properties": {
+                    "name": { "type": "string" },
+                    "kind": { "type": "string", "enum": ["solid", "text"] },
+                    "content_or_hex": { "type": "string" }
+                },
+                "required": ["name", "kind", "content_or_hex"]
+            })
+        ),
+
+        // --- 8. DESIGN / DESKTOP PUBLISHING PRIMITIVES (DesignCraft / InDesign) ---
+        tool_spec(
+            "design_new_document",
+            "New Print Publication (InDesign)",
+            "Create a multi-page publication document with spreads and margins.",
+            json!({
+                "type": "object",
+                "properties": { "title": { "type": "string" } },
+                "required": ["title"]
+            })
+        ),
+        tool_spec(
+            "design_add_text_frame",
+            "Add Text Frame to Page",
+            "Add a multi-column text frame with threaded story flow to a page.",
+            json!({
+                "type": "object",
+                "properties": {
+                    "page_index": { "type": "integer" },
+                    "x": { "type": "number" },
+                    "y": { "type": "number" },
+                    "width": { "type": "number" },
+                    "height": { "type": "number" },
+                    "text": { "type": "string" }
+                },
+                "required": ["page_index", "x", "y", "width", "height", "text"]
+            })
+        ),
+
+        // --- 9. PHOTO / RASTER PRIMITIVES (PhotoCraft) ---
         tool_spec(
             "photo_create_canvas",
             "Create Photo Canvas",
@@ -336,6 +463,8 @@ pub fn tool_definitions() -> Value {
                 "required": ["name", "width", "height"]
             })
         ),
+
+        // --- 10. VECTOR PRIMITIVES (VectorCraft) ---
         tool_spec(
             "vector_create",
             "Create Vector Document",
@@ -361,7 +490,7 @@ pub fn tool_definitions() -> Value {
                     "y": { "type": "number" },
                     "width": { "type": "number" },
                     "height": { "type": "number" },
-                    "fill_hex": { "type": "string", "description": "Hex color e.g. #FF5500" }
+                    "fill_hex": { "type": "string" }
                 },
                 "required": ["x", "y", "width", "height"]
             })
@@ -372,6 +501,8 @@ pub fn tool_definitions() -> Value {
             "Get the vector document as SVG markup.",
             json!({ "type": "object", "properties": {} })
         ),
+
+        // --- 11. CAD PRIMITIVES (CADCraft) ---
         tool_spec(
             "cad_create",
             "Create CAD Drawing",
@@ -401,6 +532,8 @@ pub fn tool_definitions() -> Value {
             "Export the CAD drawing to DXF string.",
             json!({ "type": "object", "properties": {} })
         ),
+
+        // --- 12. PDF PRIMITIVES (PdfCraft) ---
         tool_spec(
             "pdf_create",
             "Create PDF Document",
@@ -412,7 +545,7 @@ pub fn tool_definitions() -> Value {
             })
         ),
 
-        // --- AI PRIMITIVES ---
+        // --- 13. AI GENERATIVE PRIMITIVES (ArtCraft) ---
         tool_spec(
             "ai_generate_image",
             "AI Image Generation",
@@ -420,9 +553,9 @@ pub fn tool_definitions() -> Value {
             json!({
                 "type": "object",
                 "properties": {
-                    "prompt": { "type": "string", "description": "Creative visual prompt" },
-                    "width": { "type": "integer", "description": "Width in px (default 1024)" },
-                    "height": { "type": "integer", "description": "Height in px (default 768)" }
+                    "prompt": { "type": "string" },
+                    "width": { "type": "integer" },
+                    "height": { "type": "integer" }
                 },
                 "required": ["prompt"]
             })
@@ -430,25 +563,25 @@ pub fn tool_definitions() -> Value {
         tool_spec(
             "ai_generate_video",
             "AI Video Generation",
-            "Generate a video using Sora / Fal / Kling or mock provider.",
+            "Generate a video using Sora / Fal / Kling / Kinovi or mock provider.",
             json!({
                 "type": "object",
                 "properties": {
-                    "prompt": { "type": "string", "description": "Video motion prompt" },
-                    "duration_seconds": { "type": "number", "description": "Duration in seconds" }
+                    "prompt": { "type": "string" },
+                    "duration_seconds": { "type": "number" }
                 },
                 "required": ["prompt"]
             })
         ),
 
-        // --- CROSS-APP COMPOSITION PRIMITIVES ---
+        // --- 14. CROSS-APP COMPOSITION PRIMITIVES ---
         tool_spec(
             "compose_illustrated_document",
             "Compose Illustrated Word Document",
             "Autonomous composition: Generates AI illustration, outlines sections, builds Word document with tables.",
             json!({
                 "type": "object",
-                "properties": { "topic": { "type": "string", "description": "Report topic" } },
+                "properties": { "topic": { "type": "string" } },
                 "required": ["topic"]
             })
         ),
@@ -459,8 +592,8 @@ pub fn tool_definitions() -> Value {
             json!({
                 "type": "object",
                 "properties": {
-                    "title": { "type": "string", "description": "Deck title" },
-                    "num_slides": { "type": "integer", "description": "Number of slides to generate" }
+                    "title": { "type": "string" },
+                    "num_slides": { "type": "integer" }
                 },
                 "required": ["title"]
             })
@@ -472,11 +605,10 @@ pub fn tool_definitions() -> Value {
             json!({
                 "type": "object",
                 "properties": {
-                    "title": { "type": "string", "description": "Film title" },
+                    "title": { "type": "string" },
                     "scenes": {
                         "type": "array",
-                        "items": { "type": "string" },
-                        "description": "List of scene descriptions"
+                        "items": { "type": "string" }
                     }
                 },
                 "required": ["title", "scenes"]
@@ -596,7 +728,7 @@ pub async fn call_tool(session: &DreamSession, name: &str, args: &Value) -> Tool
             }
         }
 
-        // --- GRID / SPREADSHEET TOOLS ---
+        // --- GRID TOOLS ---
         "grid_new_workbook" => {
             let title = args["title"].as_str().unwrap_or("Untitled Workbook");
             let mut lock = session.workbook.lock().unwrap();
@@ -874,14 +1006,173 @@ pub async fn call_tool(session: &DreamSession, name: &str, args: &Value) -> Tool
             }
         }
 
-        // --- CREATIVE TOOLS ---
-        "vector_export_svg" => {
-            let lock = session.vector_doc.lock().unwrap();
-            if let Some(v) = lock.as_ref() {
-                ToolResult::text(v.to_svg())
+        // --- 5. SOUND TOOLS (SoundCraft / Pro Tools) ---
+        "sound_new_project" => {
+            let name = args["name"].as_str().unwrap_or("Audio Project");
+            let mut lock = session.sound_project.lock().unwrap();
+            *lock = Some(dreamcraft_primitives::tool::SoundProject::new(name));
+            ToolResult::text(format!("Created Pro Tools audio session: '{}' with default tracks", name))
+        }
+
+        "sound_add_track" => {
+            let name = args["name"].as_str().unwrap_or("Track");
+            let mut lock = session.sound_project.lock().unwrap();
+            if let Some(proj) = lock.as_mut() {
+                let id = proj.add_track(name);
+                ToolResult::text(format!("Added audio track '{}' (id: {})", name, id.short_str()))
             } else {
-                ToolResult::error("No active Vector Document.")
+                ToolResult::error("No active Audio Project.")
             }
+        }
+
+        "sound_set_fader" => {
+            let t_idx = args["track_index"].as_u64().unwrap_or(0) as usize;
+            let vol = args["volume_db"].as_f64().unwrap_or(0.0);
+            let mut lock = session.sound_project.lock().unwrap();
+            if let Some(proj) = lock.as_mut() {
+                if let Some(track) = proj.tracks.get_mut(t_idx) {
+                    track.volume_db = vol;
+                    ToolResult::text(format!("Set track '{}' fader to {:.1} dB", track.name, vol))
+                } else {
+                    ToolResult::error("Track index out of bounds.")
+                }
+            } else {
+                ToolResult::error("No active Audio Project.")
+            }
+        }
+
+        "sound_add_effect" => {
+            let t_idx = args["track_index"].as_u64().unwrap_or(0) as usize;
+            let kind = args["effect_kind"].as_str().unwrap_or("eq");
+            let eff = match kind {
+                "compressor" => AudioEffect::Compressor { threshold_db: -18.0, ratio: 4.0, attack_ms: 10.0, release_ms: 100.0 },
+                "reverb" => AudioEffect::Reverb { room_size: 0.6, damping: 0.5, wet_dry: 0.25 },
+                "delay" => AudioEffect::Delay { time_ms: 350.0, feedback: 0.4, mix: 0.2 },
+                _ => AudioEffect::Equalizer { low_db: 1.5, mid_db: 0.0, high_db: 2.0 },
+            };
+
+            let mut lock = session.sound_project.lock().unwrap();
+            if let Some(proj) = lock.as_mut() {
+                if let Some(track) = proj.tracks.get_mut(t_idx) {
+                    track.effects.push(eff);
+                    ToolResult::text(format!("Added {} effect to track '{}'", kind, track.name))
+                } else {
+                    ToolResult::error("Track index out of bounds.")
+                }
+            } else {
+                ToolResult::error("No active Audio Project.")
+            }
+        }
+
+        // --- 6. LIGHT TOOLS (LightCraft / Lightroom) ---
+        "light_develop_photo" => {
+            let mut lock = session.light_photo.lock().unwrap();
+            if let Some(photo) = lock.as_mut() {
+                if let Some(ev) = args["exposure_ev"].as_f64() {
+                    photo.set_exposure(ev);
+                }
+                if let (Some(temp), Some(tint)) = (args["temperature"].as_f64(), args["tint"].as_f64()) {
+                    photo.set_white_balance(temp, tint);
+                }
+                if let (Some(hl), Some(sh)) = (args["highlights"].as_f64(), args["shadows"].as_f64()) {
+                    photo.set_highlights_shadows(hl, sh);
+                }
+                ToolResult::text(format!("Updated Lightroom develop parameters for '{}': Exposure={:.2} EV, Temp={:.1}, Tint={:.1}",
+                    photo.path, photo.settings.tone.exposure, photo.settings.wb.temperature, photo.settings.wb.tint))
+            } else {
+                ToolResult::error("No active Photo to develop.")
+            }
+        }
+
+        "light_inspect_photo" => {
+            let lock = session.light_photo.lock().unwrap();
+            if let Some(photo) = lock.as_ref() {
+                ToolResult::json(&json!(photo))
+            } else {
+                ToolResult::error("No active Photo.")
+            }
+        }
+
+        // --- 7. EFFECT TOOLS (EffectCraft / After Effects) ---
+        "effect_new_comp" => {
+            let name = args["name"].as_str().unwrap_or("Comp 01");
+            let w = args["width"].as_u64().unwrap_or(1920) as u32;
+            let h = args["height"].as_u64().unwrap_or(1080) as u32;
+            let fps = args["fps"].as_f64().unwrap_or(30.0);
+            let frames = args["duration_frames"].as_i64().unwrap_or(300);
+
+            let mut lock = session.composition.lock().unwrap();
+            *lock = Some(dreamcraft_primitives::tool::Composition::new(name, w, h, fps, frames));
+            ToolResult::text(format!("Created After Effects composition: '{}' ({}×{} @ {} fps, {} frames)", name, w, h, fps, frames))
+        }
+
+        "effect_add_layer" => {
+            let name = args["name"].as_str().unwrap_or("Layer");
+            let kind_str = args["kind"].as_str().unwrap_or("solid");
+            let content = args["content_or_hex"].as_str().unwrap_or("#FFFFFF");
+
+            let mut lock = session.composition.lock().unwrap();
+            if let Some(comp) = lock.as_mut() {
+                if kind_str == "text" {
+                    let id = comp.add_text_layer(name, content);
+                    ToolResult::text(format!("Added Text layer '{}' (text: '{}', id: {})", name, content, id.short_str()))
+                } else {
+                    let color = Color::from_hex(content).unwrap_or(Color::WHITE);
+                    let id = comp.add_solid_layer(name, color);
+                    ToolResult::text(format!("Added Solid layer '{}' (color: {}, id: {})", name, content, id.short_str()))
+                }
+            } else {
+                ToolResult::error("No active Composition.")
+            }
+        }
+
+        // --- 8. DESIGN TOOLS (DesignCraft / InDesign) ---
+        "design_new_document" => {
+            let title = args["title"].as_str().unwrap_or("Publication 01");
+            let mut lock = session.design_doc.lock().unwrap();
+            *lock = Some(dreamcraft_primitives::tool::DesignDocument::new(title));
+            ToolResult::text(format!("Created InDesign publication document: '{}' (Facing Pages, US Letter)", title))
+        }
+
+        "design_add_text_frame" => {
+            let page_idx = args["page_index"].as_u64().unwrap_or(0) as usize;
+            let x = args["x"].as_f64().unwrap_or(36.0);
+            let y = args["y"].as_f64().unwrap_or(36.0);
+            let w = args["width"].as_f64().unwrap_or(540.0);
+            let h = args["height"].as_f64().unwrap_or(720.0);
+            let text = args["text"].as_str().unwrap_or_default();
+
+            let mut lock = session.design_doc.lock().unwrap();
+            if let Some(doc) = lock.as_mut() {
+                match doc.add_text_frame(page_idx, Rect::new(x, y, w, h), text) {
+                    Some(id) => ToolResult::text(format!("Added threaded text frame to Page {} (id: {})", page_idx + 1, id.short_str())),
+                    None => ToolResult::error("Page index out of bounds."),
+                }
+            } else {
+                ToolResult::error("No active Design Document.")
+            }
+        }
+
+        // --- 9. PHOTO TOOLS ---
+        "photo_create_canvas" => {
+            let name = args["name"].as_str().unwrap_or("Canvas 01");
+            let w = args["width"].as_u64().unwrap_or(1920) as u32;
+            let h = args["height"].as_u64().unwrap_or(1080) as u32;
+
+            let mut lock = session.photo_canvas.lock().unwrap();
+            *lock = Some(dreamcraft_primitives::tool::PhotoCanvas::new(name, w, h));
+            ToolResult::text(format!("Created Photoshop raster canvas '{}' ({}×{} px)", name, w, h))
+        }
+
+        // --- 10. VECTOR TOOLS ---
+        "vector_create" => {
+            let name = args["name"].as_str().unwrap_or("Artwork 01");
+            let w = args["width"].as_f64().unwrap_or(1920.0);
+            let h = args["height"].as_f64().unwrap_or(1080.0);
+
+            let mut lock = session.vector_doc.lock().unwrap();
+            *lock = Some(dreamcraft_primitives::tool::VectorDocument::new(name, w, h));
+            ToolResult::text(format!("Created Illustrator vector document '{}' ({}×{} pt)", name, w, h))
         }
 
         "vector_add_rect" => {
@@ -900,13 +1191,21 @@ pub async fn call_tool(session: &DreamSession, name: &str, args: &Value) -> Tool
             }
         }
 
-        "cad_export_dxf" => {
-            let lock = session.cad_drawing.lock().unwrap();
-            if let Some(cad) = lock.as_ref() {
-                ToolResult::text(cad.to_dxf())
+        "vector_export_svg" => {
+            let lock = session.vector_doc.lock().unwrap();
+            if let Some(v) = lock.as_ref() {
+                ToolResult::text(v.to_svg())
             } else {
-                ToolResult::error("No active CAD Drawing.")
+                ToolResult::error("No active Vector Document.")
             }
+        }
+
+        // --- 11. CAD TOOLS ---
+        "cad_create" => {
+            let name = args["name"].as_str().unwrap_or("Drawing 01");
+            let mut lock = session.cad_drawing.lock().unwrap();
+            *lock = Some(dreamcraft_primitives::tool::CadDrawing::new(name));
+            ToolResult::text(format!("Created AutoCAD 2D drafting file '{}'", name))
         }
 
         "cad_add_line" => {
@@ -924,7 +1223,24 @@ pub async fn call_tool(session: &DreamSession, name: &str, args: &Value) -> Tool
             }
         }
 
-        // --- AI TOOLS ---
+        "cad_export_dxf" => {
+            let lock = session.cad_drawing.lock().unwrap();
+            if let Some(cad) = lock.as_ref() {
+                ToolResult::text(cad.to_dxf())
+            } else {
+                ToolResult::error("No active CAD Drawing.")
+            }
+        }
+
+        // --- 12. PDF TOOLS ---
+        "pdf_create" => {
+            let title = args["title"].as_str().unwrap_or("Document 01");
+            let mut lock = session.pdf_doc.lock().unwrap();
+            *lock = Some(dreamcraft_primitives::tool::PdfDocument::new(title));
+            ToolResult::text(format!("Created Acrobat PDF document '{}'", title))
+        }
+
+        // --- 13. AI GENERATION TOOLS ---
         "ai_generate_image" => {
             let prompt = args["prompt"].as_str().unwrap_or("Abstract artwork");
             let w = args["width"].as_u64().unwrap_or(1024) as u32;
@@ -946,7 +1262,7 @@ pub async fn call_tool(session: &DreamSession, name: &str, args: &Value) -> Tool
             }
         }
 
-        // --- COMPOSITION TOOLS ---
+        // --- 14. CROSS-APP COMPOSITION TOOLS ---
         "compose_illustrated_document" => {
             let topic = args["topic"].as_str().unwrap_or("Artificial Intelligence");
             match CreativePipeline::compose_illustrated_report(topic).await {

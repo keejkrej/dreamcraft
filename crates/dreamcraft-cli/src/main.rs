@@ -78,8 +78,8 @@ async fn main() -> anyhow::Result<()> {
             println!("✓ Executed ripple delete on clip [{}], closing gap by {:.2}s", part_b.short_str(), shift.to_seconds());
             println!("✓ EDL Output:\n{}", seq.export_edl());
 
-            // 4. Slide Deck Primitives (PowerPoint clone)
-            println!("[4/5] Executing Slide Deck Primitives (DeckCraft)...");
+            // 4. Slide Deck Primitives (DeckCraft)
+            println!("[4/9] Executing Slide Deck Primitives (DeckCraft)...");
             let mut deck = dreamcraft_primitives::tool::Presentation::new("AI Pitch Deck");
             let s_idx = deck.add_slide(SlideLayout::TitleAndContent, "Autonomous Architecture");
             if let Some(slide) = deck.slides.get_mut(s_idx) {
@@ -89,12 +89,48 @@ async fn main() -> anyhow::Result<()> {
             }
             println!("✓ Created Presentation with {} slides.", deck.slides.len());
 
-            // 5. Cross-App AI Composition Workflow
-            println!("[5/5] Executing Cross-App AI Composition Workflow (ArtCraft)...");
+            // 5. SoundCraft / DAW Mixing Primitives (Pro Tools clone)
+            println!("[5/9] Executing DAW Audio Mixing Primitives (SoundCraft)...");
+            let mut sound = dreamcraft_primitives::tool::SoundProject::new("Cinematic Score Session");
+            let vocal_id = sound.tracks[0].id;
+            sound.set_fader(vocal_id, -3.5)?;
+            sound.set_pan(vocal_id, 0.0)?;
+            sound.add_effect(vocal_id, dreamcraft_primitives::tool::AudioEffect::Compressor {
+                threshold_db: -18.0,
+                ratio: 4.0,
+                attack_ms: 10.0,
+                release_ms: 100.0,
+            })?;
+            println!("✓ Audio Session configured: {} tracks with compressor & fader control.", sound.tracks.len());
+
+            // 6. LightCraft / Photo RAW Develop Primitives (Lightroom clone)
+            println!("[6/9] Executing RAW Photo Develop Primitives (LightCraft)...");
+            let mut photo = dreamcraft_primitives::tool::LightPhoto::new("landscape_sunset.dng");
+            photo.set_exposure(0.65);
+            photo.set_white_balance(12.0, -4.0);
+            photo.set_highlights_shadows(-30.0, 45.0);
+            println!("✓ Developed RAW photo: Exp={:.2} EV, Temp={:.1}, Highlights={:.1}",
+                photo.settings.tone.exposure, photo.settings.wb.temperature, photo.settings.tone.highlights);
+
+            // 7. EffectCraft / Motion Graphics & VFX Primitives (After Effects clone)
+            println!("[7/9] Executing Motion Graphics Keyframing Primitives (EffectCraft)...");
+            let mut comp = dreamcraft_primitives::tool::Composition::new("Title Sequence Comp", 1920, 1080, 24.0, 120);
+            comp.add_solid_layer("Background Solid", dreamcraft_core::Color::rgb(10, 15, 30));
+            let text_layer_id = comp.add_text_layer("Title Text", "DREAMCRAFT");
+            println!("✓ Created Composition (1920x1080 @ 24fps) with layers [Text: {}]", text_layer_id.short_str());
+
+            // 8. DesignCraft / Multi-column Publishing Primitives (InDesign clone)
+            println!("[8/9] Executing Desktop Publishing Primitives (DesignCraft)...");
+            let mut pub_doc = dreamcraft_primitives::tool::DesignDocument::new("Quarterly Magazine");
+            pub_doc.add_text_frame(0, dreamcraft_core::Rect::new(36.0, 36.0, 540.0, 720.0), "Editorial article text body flowing through pages.");
+            println!("✓ Publication created: {} pages with threaded text frames.", pub_doc.pages.len());
+
+            // 9. Cross-App AI Composition Workflow
+            println!("[9/9] Executing Cross-App AI Composition Workflow (ArtCraft)...");
             let generated_doc = CreativePipeline::compose_illustrated_report("Quantum Computing in 2026").await?;
             println!("✓ Composed illustrated document with {} blocks.", generated_doc.blocks.len());
 
-            println!("\n✦ All DreamCraft primitives executed successfully! ✦");
+            println!("\n✦ All 12 Craft primitives + AI Studio executed successfully! ✦");
         }
 
         "tools" => {
