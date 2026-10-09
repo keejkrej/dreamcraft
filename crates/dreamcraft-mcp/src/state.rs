@@ -24,6 +24,7 @@ pub struct DreamSession {
     pub design_doc: Arc<Mutex<Option<DesignDocument>>>,
     pub pdf_doc: Arc<Mutex<Option<PdfDocument>>>,
     pub sound_project: Arc<Mutex<Option<SoundProject>>>,
+    pub binding_engine: Arc<Mutex<dreamcraft_primitives::compose::BindingEngine>>,
 
     pub event_bus: EventBus,
 }
@@ -50,6 +51,7 @@ impl DreamSession {
             design_doc: Arc::new(Mutex::new(Some(DesignDocument::new("Publication 01")))),
             pdf_doc: Arc::new(Mutex::new(Some(PdfDocument::new("Document 01")))),
             sound_project: Arc::new(Mutex::new(Some(SoundProject::new("Track Session 01")))),
+            binding_engine: Arc::new(Mutex::new(dreamcraft_primitives::compose::BindingEngine::new())),
             event_bus: EventBus::new(),
         }
     }

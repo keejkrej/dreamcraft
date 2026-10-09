@@ -145,12 +145,73 @@ async fn main() -> anyhow::Result<()> {
             }
         }
 
+        "realize" => {
+            let bundle = args.get(2).map(|s| s.as_str()).unwrap_or("startup");
+            let mut catalog = dreamcraft_core::AssetCatalog::new();
+            let mut history = dreamcraft_core::command::CommandHistory::new(50);
+
+            match bundle {
+                "startup" => {
+                    println!("============================================================");
+                    println!("✦ Realizing Autonomous Startup Venture Dream ✦");
+                    println!("============================================================\n");
+                    let blueprint = dreamcraft_primitives::compose::StartupLaunchBlueprint::default();
+                    let artifacts = dreamcraft_primitives::compose::DreamRealizer::realize_startup(&blueprint, &mut catalog, &mut history)?;
+                    println!("✓ Brand Logo Vector SVG registered (ID: {})", artifacts.logo_asset_id);
+                    println!("✓ Financial Model (GridCraft): 3-Year ARR projection with formula recalculation");
+                    println!("✓ Pitch Deck (DeckCraft): {} slides formatted with Harbor theme", artifacts.pitch_deck.slides.len());
+                    println!("✓ Executive Memo (WordCraft): {} blocks with embedded financial table", artifacts.executive_memo.blocks.len());
+                    println!("✓ Investor Dossier (PdfCraft): {} pages with watermark and signature field", artifacts.investor_dossier.pages.len());
+                    println!("✓ Live Reactive Bindings: Synchronized GridCraft financial cell to DeckCraft KPI metric card\n");
+                    println!("Artifacts successfully compiled into workspace!");
+                }
+                "film" => {
+                    println!("============================================================");
+                    println!("✦ Realizing Autonomous Cinematic Production Dream ✦");
+                    println!("============================================================\n");
+                    let blueprint = dreamcraft_primitives::compose::CinematicProductionBlueprint::default();
+                    let artifacts = dreamcraft_primitives::compose::DreamRealizer::realize_film(&blueprint, &mut catalog, &mut history)?;
+                    println!("✓ Visual Storyboard (DeckCraft): {} scene prompt cards", artifacts.storyboard.slides.len());
+                    println!("✓ NLE Timeline (FilmCraft): {} video tracks, transitions, dialogue & music stems", artifacts.timeline.video_tracks.len());
+                    println!("✓ DAW Audio Mastering (SoundCraft): {} stems with parametric EQ & mastering limiter", artifacts.sound_mix.tracks.len());
+                    println!("✓ Motion Intro (EffectCraft): 3D typography intro with motion blur");
+                    println!("✓ SMPTE EDL Export:\n{}", artifacts.edl_export);
+                }
+                "editorial" => {
+                    println!("============================================================");
+                    println!("✦ Realizing Autonomous Editorial Publication Dream ✦");
+                    println!("============================================================\n");
+                    let blueprint = dreamcraft_primitives::compose::EditorialPublicationBlueprint::default();
+                    let artifacts = dreamcraft_primitives::compose::DreamRealizer::realize_editorial(&blueprint, &mut catalog, &mut history)?;
+                    println!("✓ Manuscript (WordCraft): {} blocks with full typography hierarchy", artifacts.manuscript.blocks.len());
+                    println!("✓ Readership Dataset (GridCraft): Readership metrics sheet with growth formulas");
+                    println!("✓ Multi-page Layout (DesignCraft): {} pages with threaded text frames", artifacts.layout.pages.len());
+                    println!("✓ Prepress Dossier (PdfCraft): {} pages ready for distribution\n", artifacts.print_pdf.pages.len());
+                }
+                "engineering" => {
+                    println!("============================================================");
+                    println!("✦ Realizing Autonomous Engineering Specification Dream ✦");
+                    println!("============================================================\n");
+                    let blueprint = dreamcraft_primitives::compose::EngineeringSpecBlueprint::default();
+                    let artifacts = dreamcraft_primitives::compose::DreamRealizer::realize_engineering(&blueprint, &mut catalog, &mut history)?;
+                    println!("✓ CAD Blueprint (CadCraft): 2D technical drawing with dimensions & DXF export (ID: {})", artifacts.dxf_asset_id);
+                    println!("✓ Architecture Diagram (VectorCraft): System bus topology");
+                    println!("✓ Bill of Materials (GridCraft): Live cost rollup spreadsheet with SUM formulas");
+                    println!("✓ Technical Specification (WordCraft): Engineering spec documentation\n");
+                }
+                _ => {
+                    println!("Unknown dream bundle: {}. Available: startup, film, editorial, engineering", bundle);
+                }
+            }
+        }
+
         _ => {
             println!("DreamCraft CLI - All-in-one AI-Native Creative Suite");
             println!("\nUsage:");
-            println!("  dreamcraft mcp     Start the Model Context Protocol (MCP) server on stdio");
-            println!("  dreamcraft demo    Run end-to-end demo of all tool, AI, and composition primitives");
-            println!("  dreamcraft tools   List all available MCP tools");
+            println!("  dreamcraft mcp                      Start the Model Context Protocol (MCP) server on stdio");
+            println!("  dreamcraft realize [startup|film|editorial|engineering]  Autonomously realize high-level multi-modal dreams");
+            println!("  dreamcraft demo                     Run end-to-end demo of all tool, AI, and composition primitives");
+            println!("  dreamcraft tools                    List all available MCP tools");
         }
     }
 

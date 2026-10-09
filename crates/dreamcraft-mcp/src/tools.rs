@@ -1,6 +1,10 @@
 use crate::state::DreamSession;
 use dreamcraft_core::{ChangeEvent, Color, Id, Rect, Tick};
 use dreamcraft_primitives::ai::CreativePipeline;
+use dreamcraft_primitives::compose::{
+    CinematicProductionBlueprint, DreamRealizer, EditorialPublicationBlueprint,
+    EngineeringSpecBlueprint, StartupLaunchBlueprint,
+};
 use dreamcraft_primitives::tool::{
     AudioEffect, CellCoord, Compressor, DeckThemeKind, Delay, HeadingLevel, ParametricEq, Reverb, SlideLayout,
     TrackKind, TransitionKind, WordDocument, Workbook,
@@ -796,6 +800,74 @@ pub fn tool_definitions() -> Value {
             "dream_history",
             "Get Execution History",
             "Get the audit trail of commands and operations executed in the active workspace.",
+            json!({
+                "type": "object"
+            })
+        ),
+        tool_spec(
+            "dream_realize_startup",
+            "Realize Startup Venture Bundle",
+            "Synthesize complete brand identity (VectorCraft), 3-year dynamic financial model (GridCraft), executive memo (WordCraft), KPI pitch deck (DeckCraft), reactive bindings, and restricted PDF investor dossier (PdfCraft).",
+            json!({
+                "type": "object",
+                "properties": {
+                    "company_name": { "type": "string" },
+                    "pitch": { "type": "string" },
+                    "founder": { "type": "string" },
+                    "initial_arr": { "type": "number" },
+                    "growth_rate": { "type": "number" },
+                    "target_valuation": { "type": "number" },
+                    "team_size": { "type": "integer" },
+                    "theme": { "type": "string", "enum": ["Harbor", "Ember", "Meadow", "Nocturne", "Paper", "Slate"] }
+                }
+            })
+        ),
+        tool_spec(
+            "dream_realize_film",
+            "Realize Cinematic Production Bundle",
+            "Synthesize visual storyboard (DeckCraft), NLE video sequence with razor cuts and transitions (FilmCraft), DAW multitrack stems with EQ & mastering limiter (SoundCraft), 3-way color grade (LightCraft), motion graphics intro (EffectCraft), and SMPTE EDL export.",
+            json!({
+                "type": "object",
+                "properties": {
+                    "title": { "type": "string" },
+                    "logline": { "type": "string" },
+                    "target_duration_seconds": { "type": "number" },
+                    "genre": { "type": "string" }
+                }
+            })
+        ),
+        tool_spec(
+            "dream_realize_editorial",
+            "Realize Editorial Publication Bundle",
+            "Synthesize full whitepaper manuscript (WordCraft), statistical readership dataset (GridCraft), facing spreads with multi-column threaded frames (DesignCraft), cover composite (PhotoCraft), and prepress print PDF dossier (PdfCraft).",
+            json!({
+                "type": "object",
+                "properties": {
+                    "title": { "type": "string" },
+                    "issue_number": { "type": "integer" },
+                    "date_label": { "type": "string" },
+                    "watermark": { "type": "string" }
+                }
+            })
+        ),
+        tool_spec(
+            "dream_realize_engineering",
+            "Realize Engineering Spec Bundle",
+            "Synthesize 2D CAD technical drawing with layers and dimensions (CadCraft), AutoCAD DXF export, vector architecture diagram (VectorCraft), live BOM spreadsheet with cost rollup formulas (GridCraft), and technical specification (WordCraft).",
+            json!({
+                "type": "object",
+                "properties": {
+                    "title": { "type": "string" },
+                    "revision": { "type": "string" },
+                    "author": { "type": "string" },
+                    "tolerance_mm": { "type": "number" }
+                }
+            })
+        ),
+        tool_spec(
+            "dream_sync_bindings",
+            "Synchronize Live Reactive Bindings",
+            "Re-evaluate all spreadsheet calculations and dynamically propagate changed values across bound presentation cards, KPI widgets, and document tables.",
             json!({
                 "type": "object"
             })
@@ -1717,6 +1789,198 @@ pub async fn call_tool(session: &DreamSession, name: &str, args: &Value) -> Tool
             let proj = session.project.lock().unwrap();
             let history_json = serde_json::to_value(&proj.command_history.past).unwrap_or_default();
             ToolResult::json(&history_json)
+        }
+
+        "dream_realize_startup" => {
+            let mut blueprint = StartupLaunchBlueprint::default();
+            if let Some(n) = args["company_name"].as_str() { blueprint.name = n.into(); }
+            if let Some(p) = args["pitch"].as_str() { blueprint.pitch = p.into(); }
+            if let Some(f) = args["founder"].as_str() { blueprint.founder = f.into(); }
+            if let Some(arr) = args["initial_arr"].as_f64() { blueprint.initial_arr = arr; }
+            if let Some(gr) = args["growth_rate"].as_f64() { blueprint.growth_rate = gr; }
+            if let Some(val) = args["target_valuation"].as_f64() { blueprint.target_valuation = val; }
+            if let Some(ts) = args["team_size"].as_u64() { blueprint.team_size = ts as usize; }
+            if let Some(t) = args["theme"].as_str() {
+                blueprint.theme = match t {
+                    "Ember" => DeckThemeKind::Ember,
+                    "Meadow" => DeckThemeKind::Meadow,
+                    "Nocturne" => DeckThemeKind::Nocturne,
+                    "Paper" => DeckThemeKind::Paper,
+                    "Slate" => DeckThemeKind::Slate,
+                    _ => DeckThemeKind::Harbor,
+                };
+            }
+
+            let mut proj_guard = session.project.lock().unwrap();
+            let proj = &mut *proj_guard;
+            match DreamRealizer::realize_startup(&blueprint, &mut proj.asset_catalog, &mut proj.command_history) {
+                Ok(artifacts) => {
+                    *session.vector_doc.lock().unwrap() = Some(artifacts.vector_logo);
+                    *session.workbook.lock().unwrap() = Some(artifacts.financial_model);
+                    *session.deck.lock().unwrap() = Some(artifacts.pitch_deck);
+                    *session.word_doc.lock().unwrap() = Some(artifacts.executive_memo);
+                    *session.pdf_doc.lock().unwrap() = Some(artifacts.investor_dossier);
+                    *session.binding_engine.lock().unwrap() = artifacts.binding_engine;
+
+                    session.event_bus.emit(ChangeEvent::DocumentUpdated {
+                        id: "startup_bundle".into(),
+                        title: blueprint.name.clone(),
+                    });
+
+                    ToolResult::json(&json!({
+                        "status": "success",
+                        "dream": "Startup Venture Realization",
+                        "company": blueprint.name,
+                        "deliverables": {
+                            "brand_logo": { "kind": "Vector SVG", "asset_id": artifacts.logo_asset_id },
+                            "financial_model": { "engine": "GridCraft", "sheets": 2, "time_horizon": "3 Years" },
+                            "pitch_deck": { "engine": "DeckCraft", "slides": 4, "theme": format!("{:?}", blueprint.theme) },
+                            "executive_memo": { "engine": "WordCraft", "tables": 1 },
+                            "investor_dossier": { "engine": "PdfCraft", "pages": 2, "watermark": "CONFIDENTIAL // SERIES A" },
+                            "reactive_bindings": { "count": 1, "description": "Dynamic Grid ARR -> Deck Metric sync" }
+                        }
+                    }))
+                }
+                Err(e) => ToolResult::error(format!("Failed to realize startup dream: {}", e)),
+            }
+        }
+
+        "dream_realize_film" => {
+            let mut blueprint = CinematicProductionBlueprint::default();
+            if let Some(t) = args["title"].as_str() { blueprint.title = t.into(); }
+            if let Some(l) = args["logline"].as_str() { blueprint.logline = l.into(); }
+            if let Some(d) = args["target_duration_seconds"].as_f64() { blueprint.target_duration_seconds = d; }
+            if let Some(g) = args["genre"].as_str() { blueprint.genre = g.into(); }
+
+            let mut proj_guard = session.project.lock().unwrap();
+            let proj = &mut *proj_guard;
+            match DreamRealizer::realize_film(&blueprint, &mut proj.asset_catalog, &mut proj.command_history) {
+                Ok(artifacts) => {
+                    *session.deck.lock().unwrap() = Some(artifacts.storyboard);
+                    *session.film_seq.lock().unwrap() = Some(artifacts.timeline);
+                    *session.sound_project.lock().unwrap() = Some(artifacts.sound_mix);
+                    *session.composition.lock().unwrap() = Some(artifacts.motion_intro);
+
+                    session.event_bus.emit(ChangeEvent::DocumentUpdated {
+                        id: "film_bundle".into(),
+                        title: blueprint.title.clone(),
+                    });
+
+                    ToolResult::json(&json!({
+                        "status": "success",
+                        "dream": "Cinematic Production Realization",
+                        "title": blueprint.title,
+                        "deliverables": {
+                            "storyboard": { "engine": "DeckCraft", "scenes": blueprint.scenes.len() },
+                            "nle_timeline": { "engine": "FilmCraft", "tracks": 5, "transitions": 1 },
+                            "audio_master": { "engine": "SoundCraft", "stems": 6, "limiter_ceiling_db": -0.1 },
+                            "motion_intro": { "engine": "EffectCraft", "dimension": "1920x1080", "is_3d": true },
+                            "edl_export": { "format": "SMPTE CMX 3600", "snippet": artifacts.edl_export.lines().take(5).collect::<Vec<_>>().join("\n") }
+                        }
+                    }))
+                }
+                Err(e) => ToolResult::error(format!("Failed to realize film dream: {}", e)),
+            }
+        }
+
+        "dream_realize_editorial" => {
+            let mut blueprint = EditorialPublicationBlueprint::default();
+            if let Some(t) = args["title"].as_str() { blueprint.title = t.into(); }
+            if let Some(i) = args["issue_number"].as_u64() { blueprint.issue_number = i as usize; }
+            if let Some(d) = args["date_label"].as_str() { blueprint.date_label = d.into(); }
+            if let Some(w) = args["watermark"].as_str() { blueprint.security_watermark = Some(w.into()); }
+
+            let mut proj_guard = session.project.lock().unwrap();
+            let proj = &mut *proj_guard;
+            match DreamRealizer::realize_editorial(&blueprint, &mut proj.asset_catalog, &mut proj.command_history) {
+                Ok(artifacts) => {
+                    let pdf_pages_count = artifacts.print_pdf.pages.len();
+                    *session.word_doc.lock().unwrap() = Some(artifacts.manuscript);
+                    *session.workbook.lock().unwrap() = Some(artifacts.dataset);
+                    *session.design_doc.lock().unwrap() = Some(artifacts.layout);
+                    *session.photo_canvas.lock().unwrap() = Some(artifacts.cover_photo);
+                    *session.pdf_doc.lock().unwrap() = Some(artifacts.print_pdf);
+
+                    session.event_bus.emit(ChangeEvent::DocumentUpdated {
+                        id: "editorial_bundle".into(),
+                        title: blueprint.title.clone(),
+                    });
+
+                    ToolResult::json(&json!({
+                        "status": "success",
+                        "dream": "Editorial Publication Realization",
+                        "title": blueprint.title,
+                        "deliverables": {
+                            "manuscript": { "engine": "WordCraft", "articles": blueprint.articles.len() },
+                            "dataset": { "engine": "GridCraft", "metrics_sheet": "Readership Analytics" },
+                            "page_layout": { "engine": "DesignCraft", "spreads": pdf_pages_count, "threaded_stories": true },
+                            "cover_art": { "engine": "PhotoCraft", "resolution": "2400x3100 300DPI", "layers": 3 },
+                            "prepress_pdf": { "engine": "PdfCraft", "pages": pdf_pages_count }
+                        }
+                    }))
+                }
+                Err(e) => ToolResult::error(format!("Failed to realize editorial dream: {}", e)),
+            }
+        }
+
+        "dream_realize_engineering" => {
+            let mut blueprint = EngineeringSpecBlueprint::default();
+            if let Some(t) = args["title"].as_str() { blueprint.title = t.into(); }
+            if let Some(r) = args["revision"].as_str() { blueprint.revision = r.into(); }
+            if let Some(a) = args["author"].as_str() { blueprint.author = a.into(); }
+            if let Some(tol) = args["tolerance_mm"].as_f64() { blueprint.tolerance_mm = tol; }
+
+            let mut proj_guard = session.project.lock().unwrap();
+            let proj = &mut *proj_guard;
+            match DreamRealizer::realize_engineering(&blueprint, &mut proj.asset_catalog, &mut proj.command_history) {
+                Ok(artifacts) => {
+                    *session.cad_drawing.lock().unwrap() = Some(artifacts.cad_drawing);
+                    *session.vector_doc.lock().unwrap() = Some(artifacts.architecture_diagram);
+                    *session.workbook.lock().unwrap() = Some(artifacts.bill_of_materials);
+                    *session.word_doc.lock().unwrap() = Some(artifacts.technical_spec);
+
+                    session.event_bus.emit(ChangeEvent::DocumentUpdated {
+                        id: "engineering_bundle".into(),
+                        title: blueprint.title.clone(),
+                    });
+
+                    ToolResult::json(&json!({
+                        "status": "success",
+                        "dream": "Engineering Specification Realization",
+                        "title": blueprint.title,
+                        "deliverables": {
+                            "cad_drawing": { "engine": "CadCraft", "layers": 5, "dxf_asset_id": artifacts.dxf_asset_id },
+                            "architecture_diagram": { "engine": "VectorCraft", "buses": 1 },
+                            "bill_of_materials": { "engine": "GridCraft", "components": blueprint.components.len() },
+                            "technical_spec": { "engine": "WordCraft", "author": blueprint.author }
+                        }
+                    }))
+                }
+                Err(e) => ToolResult::error(format!("Failed to realize engineering dream: {}", e)),
+            }
+        }
+
+        "dream_sync_bindings" => {
+            let mut wb_lock = session.workbook.lock().unwrap();
+            let mut deck_lock = session.deck.lock().unwrap();
+            let mut word_lock = session.word_doc.lock().unwrap();
+            let binding_engine = session.binding_engine.lock().unwrap();
+
+            match (&mut *wb_lock, &mut *deck_lock, &mut *word_lock) {
+                (Some(ref mut wb), Some(ref mut deck), Some(ref mut word)) => {
+                    match binding_engine.sync_all(wb, deck, word) {
+                        Ok(count) => {
+                            session.event_bus.emit(ChangeEvent::DocumentUpdated {
+                                id: "binding_sync".into(),
+                                title: format!("Synced {} reactive bindings", count),
+                            });
+                            ToolResult::text(format!("Successfully recalculated workbook and propagated {} reactive bindings across Deck KPI cards and Word tables.", count))
+                        }
+                        Err(e) => ToolResult::error(format!("Binding sync failed: {}", e)),
+                    }
+                }
+                _ => ToolResult::error("Active workspace missing required workbook, deck, or word document for binding sync."),
+            }
         }
 
         _ => ToolResult::error(format!("Unknown tool: {}", name)),
