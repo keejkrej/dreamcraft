@@ -1,0 +1,30 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/dreamcraft-core",
+    "crates/dreamcraft-primitives",
+    "crates/dreamcraft-mcp",
+    "crates/dreamcraft-studio",
+    "crates/dreamcraft-cli",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+authors = ["DreamCraft Contributors"]
+
+[workspace.dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+thiserror = "1.0"
+anyhow = "1.0"
+image = { version = "0.25", default-features = false, features = ["png", "jpeg"] }
+tokio = { version = "1.38", features = ["full"] }
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+uuid = { version = "1.8", features = ["v4", "serde"] }
+chrono = { version = "0.4", features = ["serde"] }
+egui = "0.28"
+eframe = { version = "0.28", default-features = false, features = ["default_fonts", "glow"] }
+tracing = "0.1"
+tracing-subscriber = "0.3"

@@ -1,0 +1,16 @@
+[package]
+name = "dreamcraft-mcp"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+dreamcraft-core = { path = "../dreamcraft-core" }
+dreamcraft-primitives = { path = "../dreamcraft-primitives" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
+uuid = { workspace = true }
+

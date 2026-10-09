@@ -1,0 +1,21 @@
+[package]
+name = "dreamcraft-primitives"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+dreamcraft-core = { path = "../dreamcraft-core" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+image = { workspace = true }
+tokio = { workspace = true }
+reqwest = { workspace = true }
+uuid = { workspace = true }
+chrono = { workspace = true }
+egui = { workspace = true, optional = true }
+
+[features]
+default = ["ui"]
+ui = ["dep:egui"]
