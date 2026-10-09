@@ -765,6 +765,40 @@ pub fn tool_definitions() -> Value {
                 },
                 "required": ["text"]
             })
+        ),
+        // --- NEXT-LEVEL MULTI-MODAL ORCHESTRATION ---
+        tool_spec(
+            "dream_inspect",
+            "Inspect Creative Workspace Semantics",
+            "High-level token-efficient semantic inspection of any creative engine ('word', 'grid', 'film', 'deck', 'sound', 'assets', or 'all').",
+            json!({
+                "type": "object",
+                "properties": {
+                    "domain": { "type": "string", "enum": ["word", "grid", "film", "deck", "sound", "assets", "all"] }
+                }
+            })
+        ),
+        tool_spec(
+            "dream_register_asset",
+            "Register Cross-Domain Asset",
+            "Add an image, video, audio, or vector asset into the central project asset catalog to reference across apps.",
+            json!({
+                "type": "object",
+                "properties": {
+                    "name": { "type": "string" },
+                    "kind": { "type": "string", "enum": ["Image", "Video", "Audio", "Vector", "Dataset", "Document", "Model3D"] },
+                    "uri": { "type": "string" }
+                },
+                "required": ["name", "kind", "uri"]
+            })
+        ),
+        tool_spec(
+            "dream_history",
+            "Get Execution History",
+            "Get the audit trail of commands and operations executed in the active workspace.",
+            json!({
+                "type": "object"
+            })
         )
     ])
 }
@@ -1652,6 +1686,37 @@ pub async fn call_tool(session: &DreamSession, name: &str, args: &Value) -> Tool
             } else {
                 ToolResult::error("No active PDF Document.")
             }
+        }
+
+        "dream_inspect" => {
+            let domain = args["domain"].as_str().unwrap_or("all");
+            let inspection = session.inspect_semantic(domain);
+            ToolResult::json(&inspection)
+        }
+
+        "dream_register_asset" => {
+            let name = args["name"].as_str().unwrap_or("Untitled Asset");
+            let kind_str = args["kind"].as_str().unwrap_or("Image");
+            let uri = args["uri"].as_str().unwrap_or("");
+
+            let kind = match kind_str {
+                "Video" => dreamcraft_core::AssetKind::Video,
+                "Audio" => dreamcraft_core::AssetKind::Audio,
+                "Vector" => dreamcraft_core::AssetKind::Vector,
+                "Dataset" => dreamcraft_core::AssetKind::Dataset,
+                "Document" => dreamcraft_core::AssetKind::Document,
+                "Model3D" => dreamcraft_core::AssetKind::Model3D,
+                _ => dreamcraft_core::AssetKind::Image,
+            };
+
+            let id = session.register_asset(name, kind, uri);
+            ToolResult::text(format!("Registered asset '{}' (ID: {}) into project catalog.", name, id))
+        }
+
+        "dream_history" => {
+            let proj = session.project.lock().unwrap();
+            let history_json = serde_json::to_value(&proj.command_history.past).unwrap_or_default();
+            ToolResult::json(&history_json)
         }
 
         _ => ToolResult::error(format!("Unknown tool: {}", name)),
