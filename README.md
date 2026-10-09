@@ -19,22 +19,28 @@ DreamCraft splits creative and productivity software into three distinct categor
 ┌────────────────────────────────────────────────────────────────────────┐
 │                              DreamCraft                                │
 │                                                                        │
-│   1. Tool Primitives (Deterministic)                                  │
+│   1. Tool Primitives (Deterministic Execution Cores)                   │
 │      ├── WordCraft: Documents, headings, runs, formatting, tables     │
-│      ├── GridCraft: Spreadsheets, cells, formulas (SUM, AVG), CSV     │
+│      ├── GridCraft: Spreadsheets, cells, formula AST (SUM, AVG), CSV   │
 │      ├── FilmCraft: Timeline, tracks, clips, razor cuts, ripple delete │
 │      ├── DeckCraft: Slides, shapes, bullets, themes, media            │
+│      ├── SoundCraft: Pro Tools DAW mixer, faders, pan, EQ, compressor  │
+│      ├── LightCraft: Lightroom RAW develop, exposure, temp, tone curve │
+│      ├── EffectCraft: After Effects comp, layers, keyframe transforms  │
+│      ├── DesignCraft: InDesign multi-column spreads & text frames      │
 │      ├── PhotoCraft: Multi-layer raster canvas, blend modes, adjust   │
 │      ├── VectorCraft: Shapes, beziers, SVG generation                 │
 │      ├── CADCraft: 2D drafting, lines, circles, DXF export            │
 │      └── PdfCraft: Page merging, splitting, text extraction           │
 │                                                                        │
-│   2. AI Primitives (Non-Deterministic / Generative)                    │
+│   2. AI Primitives (Non-Deterministic Generative Clients)              │
 │      ├── Fal.ai (Flux Schnell/Dev, SDXL fast diffusion)               │
 │      ├── OpenAI Sora (Video generation)                               │
 │      ├── Midjourney (Image generation)                                │
 │      ├── WorldLabs (3D Gaussian Splatting / world generation)         │
-│      └── Grok (Multimodal creative reasoning)                         │
+│      ├── Grok (Multimodal creative reasoning)                         │
+│      ├── GMICloud (High throughput GPU model inference)               │
+│      └── Kinovi (Generative motion video camera control)              │
 │                                                                        │
 │   3. UI Primitives (Presentation & Preview Layer)                      │
 │      ├── DocPreview: Paginated typography and document layout         │
